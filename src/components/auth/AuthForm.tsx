@@ -50,7 +50,7 @@ export default function AuthForm({ type, inviteToken }: AuthFormProps) {
 
         if (data.user) {
           // Don't try to create organization here - it's handled by the database trigger
-          router.push('/dashboard');
+          router.push('/');
         }
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({
@@ -62,7 +62,7 @@ export default function AuthForm({ type, inviteToken }: AuthFormProps) {
           console.error('Signin error:', signInError);
           throw signInError;
         }
-        router.push('/dashboard');
+        router.push('/');
       }
     } catch (err) {
       console.error('Auth error:', err);

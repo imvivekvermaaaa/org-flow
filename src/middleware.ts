@@ -18,9 +18,9 @@ export async function middleware(req: NextRequest) {
     }
 
     // If user is signed in and the current path is /signin or /signup,
-    // redirect the user to /dashboard
+    // redirect the user to /
     if (session && ["/signin", "/signup"].includes(req.nextUrl.pathname)) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+      return NextResponse.redirect(new URL("/", req.url));
     }
 
     return res;

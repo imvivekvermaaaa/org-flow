@@ -10,7 +10,7 @@ export default async function SignInPage() {
   // Check if user is already authenticated
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   return (

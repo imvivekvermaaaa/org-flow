@@ -9,13 +9,13 @@ interface SignUpPageProps {
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const cookieStore = await cookies();
-  const supabase = createServerComponentClient({ cookies: () => cookieStore });
+  const supabase = createServerComponentClient({ cookies: async() => cookieStore });
   const params = await searchParams;
   
   // Check if user is already authenticated
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
-    redirect('/dashboard');
+    redirect('/');
   }
 
   // If there's an invite token, verify it
