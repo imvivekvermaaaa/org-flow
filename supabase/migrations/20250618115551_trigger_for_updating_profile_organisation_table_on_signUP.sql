@@ -1,6 +1,6 @@
 -- Drop the trigger first (since it depends on the function)
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-
+ 
 -- Drop the function if it exists
 DROP FUNCTION IF EXISTS public.handle_new_user_signup();
 
@@ -9,39 +9,55 @@ CREATE OR REPLACE FUNCTION public.handle_new_user_signup()
 RETURNS TRIGGER AS $$
 DECLARE
     new_org_id UUID;
+    org_id UUID;
+    user_role TEXT;
+    org_name TEXT;
 BEGIN
-    -- Log the new user for debugging
-    RAISE NOTICE 'New user signup: %', NEW.email;
+    -- Check if organization_id and role are provided in metadata
+    org_id := COALESCE(NEW.raw_user_meta_data->>'organization_id', NULL);
+    user_role := COALESCE(NEW.raw_user_meta_data->>'role', NULL);
 
-    -- Create a new organization for the user
-    INSERT INTO public.organizations (name, slug)
-    VALUES (
-        'My Organization',
-        'org-' || NEW.id::text
-    )
-    RETURNING id INTO new_org_id;
+    IF org_id IS NOT NULL AND user_role IS NOT NULL THEN
+        -- Invited member: use provided org and role
+        INSERT INTO public.profiles (
+            id,
+            email,
+            full_name,
+            organization_id,
+            role
+        )
+        VALUES (
+            NEW.id,
+            NEW.email,
+            COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+            org_id,
+            user_role
+        );
+    ELSE
+        -- Default: create new org and owner profile
+        org_name := COALESCE(NEW.raw_user_meta_data->>'organization_name', 'My Organization');
+        INSERT INTO public.organizations (name, slug)
+        VALUES (
+            org_name,
+            'org-' || NEW.id::text
+        )
+        RETURNING id INTO new_org_id;
 
-    -- Log the created organization
-    RAISE NOTICE 'Created organization with ID: %', new_org_id;
-
-    -- Create profile for the new user
-    INSERT INTO public.profiles (
-        id,
-        email,
-        full_name,
-        organization_id,
-        role
-    )
-    VALUES (
-        NEW.id,
-        NEW.email,
-        COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
-        new_org_id,
-        'owner'
-    );
-
-    -- Log the created profile
-    RAISE NOTICE 'Created profile for user: %', NEW.id;
+        INSERT INTO public.profiles (
+            id,
+            email,
+            full_name,
+            organization_id,
+            role
+        )
+        VALUES (
+            NEW.id,
+            NEW.email,
+            COALESCE(NEW.raw_user_meta_data->>'full_name', ''),
+            new_org_id,
+            'owner'
+        );
+    END IF;
 
     RETURN NEW;
 EXCEPTION

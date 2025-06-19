@@ -2,6 +2,7 @@
 DROP TABLE IF EXISTS organization_invites CASCADE;
 DROP TABLE IF EXISTS profiles CASCADE;
 DROP TABLE IF EXISTS organizations CASCADE;
+DROP TABLE IF EXISTS profile_organizations CASCADE;
 
 -- Create organizations table
 CREATE TABLE organizations (
@@ -19,6 +20,7 @@ CREATE TABLE profiles (
     full_name TEXT,
     avatar_url TEXT,
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE,
+    connected_organizations UUID[],
     role TEXT NOT NULL CHECK (role IN ('owner', 'member')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
@@ -29,9 +31,7 @@ CREATE TABLE organization_invites (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     organization_id UUID REFERENCES organizations(id) ON DELETE CASCADE NOT NULL,
     email TEXT NOT NULL,
-    token TEXT UNIQUE NOT NULL,
-    status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'expired')),
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
