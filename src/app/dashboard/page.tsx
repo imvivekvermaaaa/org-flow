@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import InviteMember from '@/components/organization/InviteMember';
 import LogoutButton from '@/components/auth/LogoutButton';
+import Notification from '@/components/organization/Notification';
+import { getUserProfile } from '@/db-integration/queries/getUserProfile';
+import { getOrganizationMembers } from '@/db-integration/queries/getOrganizationMembers';
 
 export default async function DashboardPage() {
   const cookieStore = cookies();
@@ -16,21 +19,14 @@ export default async function DashboardPage() {
     }
 
     // Get user's profile and organization
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*, organizations(*)')
-      .eq('id', session.user.id)
-      .single();
+    const { data: profile, error: profileError } = await getUserProfile(supabase, session.user.id);
 
     if (profileError || !profile) {
       redirect('/signup');
     }
 
     // Get organization members
-    const { data: members, error: membersError } = await supabase
-      .from('profiles')
-      .select('id, email, full_name, role')
-      .eq('organization_id', profile.organization_id);
+    const { data: members, error: membersError } = await getOrganizationMembers(supabase, profile.organization_id);
 
     if (membersError) {
       console.error('Error fetching members:', membersError);
@@ -45,7 +41,10 @@ export default async function DashboardPage() {
                 <h1 className="text-2xl font-bold text-gray-900">
                   {profile.organizations.name}
                 </h1>
-                <LogoutButton />
+                <div className="flex items-center gap-4">
+                  <Notification />
+                  <LogoutButton />
+                </div>
               </div>
 
               <div className="mb-8">
