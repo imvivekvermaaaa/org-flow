@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { v4 as uuidv4 } from 'uuid';
+import { addOrganizationMember } from '@/db-integration/queries/addOrganizationMember';
 
 interface InviteMemberProps {
   organizationId: string;
 }
 
 export default function InviteMember({ organizationId }: InviteMemberProps) {
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,28 +25,16 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
     setSuccess(false);
 
     try {
-      // Generate a unique token for the invite
-      const token = crypto.randomUUID();
-      
-      // Create the invite
-      const { error: inviteError } = await supabase
-        .from('organization_invites')
-        .insert({
-          organization_id: organizationId,
-          email,
-          token,
-          status: 'pending',
-          expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
-        });
-
-      if (inviteError) throw inviteError;
-
-      // In a real application, you would send an email here with the invite link
-      const inviteLink = `${window.location.origin}/signup?token=${token}`;
-      console.log('Invite link:', inviteLink); // For development purposes
-
+      const response = await fetch('/api/invite-member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organizationId, email }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || 'Failed to send invite');
       setSuccess(true);
       setEmail('');
+      setName('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -56,6 +47,19 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
       <h2 className="text-2xl font-bold mb-6">Invite Team Member</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Full Name
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            required
+          />
+        </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
             Email Address
@@ -76,7 +80,7 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
 
         {success && (
           <div className="text-green-500 text-sm">
-            Invitation sent successfully!
+            Member added successfully!
           </div>
         )}
 
@@ -85,7 +89,7 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
           disabled={loading}
           className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
         >
-          {loading ? 'Sending...' : 'Send Invitation'}
+          {loading ? 'Adding...' : 'Add Member'}
         </button>
       </form>
     </div>
