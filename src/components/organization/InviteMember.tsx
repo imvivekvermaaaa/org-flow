@@ -10,7 +10,6 @@ interface InviteMemberProps {
 }
 
 export default function InviteMember({ organizationId }: InviteMemberProps) {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +33,6 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
       if (!response.ok) throw new Error(result.error || 'Failed to send invite');
       setSuccess(true);
       setEmail('');
-      setName('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -47,19 +45,6 @@ export default function InviteMember({ organizationId }: InviteMemberProps) {
       <h2 className="text-2xl font-bold mb-6">Invite Team Member</h2>
       
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-            Full Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            required
-          />
-        </div>
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-gray-700">
             Email Address
