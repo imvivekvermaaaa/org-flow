@@ -6,6 +6,9 @@ import LogoutButton from '@/components/auth/LogoutButton';
 import Notification from '@/components/organization/Notification';
 import { getUserProfile } from '@/db-integration/queries/getUserProfile';
 import { getOrganizationMembers } from '@/db-integration/queries/getOrganizationMembers';
+import InviteMemberModal from '@/components/organization/InviteMemberModal';
+import { getUserOrganizations } from '@/db-integration/queries/getUserOrganizations';
+import OrganizationSelector from '@/components/organization/OrganizationSelector';
 
 export default async function Home() {
   const cookieStore = cookies();
@@ -25,6 +28,13 @@ export default async function Home() {
       redirect('/signup');
     }
 
+    // Fetch all organizations for the user
+    const { data: organizations, error: orgsError } = await getUserOrganizations(supabase, session.user.id);
+
+    if (orgsError) {
+      console.error('Error fetching organizations:', orgsError);
+    }
+
     // Get organization members
     const { data: members, error: membersError } = await getOrganizationMembers(supabase, profile.organization_id);
 
@@ -35,6 +45,8 @@ export default async function Home() {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          {/* Organization Dropdown */}
+          <OrganizationSelector organizations={organizations || []} initialOrganizationId={profile.organization_id} />
           <div className="px-4 py-6 sm:px-0">
             <div className="bg-white shadow rounded-lg p-6">
               <div className="flex justify-between items-center mb-6">
@@ -43,6 +55,9 @@ export default async function Home() {
                 </h1>
                 <div className="flex items-center gap-4">
                   <Notification />
+                  {profile.role === 'owner' && (
+                    <InviteMemberModal organizationId={profile.organization_id} />
+                  )}
                   <LogoutButton />
                 </div>
               </div>
@@ -71,13 +86,6 @@ export default async function Home() {
                   </ul>
                 </div>
               </div>
-
-              {profile.role === 'owner' && (
-                <div>
-                  <h2 className="text-lg font-medium text-gray-900 mb-4">Invite New Member</h2>
-                  <InviteMember organizationId={profile.organization_id} />
-                </div>
-              )}
             </div>
           </div>
         </div>
