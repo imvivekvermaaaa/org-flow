@@ -8,8 +8,8 @@ interface SignUpPageProps {
 }
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
-  const cookieStore = await cookies();
-  const supabase = createServerComponentClient({ cookies: async() => cookieStore });
+  const cookieStore = cookies();
+  const supabase = createServerComponentClient({ cookies: () => cookieStore });
   const params = await searchParams;
   
   // Check if user is already authenticated
